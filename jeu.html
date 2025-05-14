@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Le Cristal Caché</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to bottom, #e0f7fa, #ffffff);
+      padding: 2rem;
+      text-align: center;
+    }
+    h1 {
+      color: #00796b;
+      margin-bottom: 0.5rem;
+    }
+    p {
+      color: #555;
+      margin-bottom: 1.5rem;
+    }
+    input, button {
+      padding: 0.7rem 1rem;
+      font-size: 1rem;
+      margin: 0.3rem;
+      border: none;
+      border-radius: 5px;
+    }
+    input {
+      width: 80%;
+      max-width: 300px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #00796b;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #004d40;
+    }
+    #log {
+      margin-top: 2rem;
+      white-space: pre-line;
+      background-color: white;
+      padding: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      max-width: 90%;
+      margin-left: auto;
+      margin-right: auto;
+      height: 300px;
+      overflow-y: auto;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Le Cristal Caché</h1>
+  <p>Devine le mot mystère ! Tu auras un indice au 20ᵉ essai.</p>
+  <input type="text" id="guess" placeholder="Tape ton mot...">
+  <button onclick="checkGuess()">Valider</button>
+  <div id="log"></div>
+
+  <script>
+    // Liste élargie de mots simples à un seul mot, aléatoire à chaque partie
+    const wordPool = ["diamant", "saphir", "rubis", "verre", "cristal", "jade", "topaze", "miroir", "perle", "glace"];
+    const target = wordPool[Math.floor(Math.random() * wordPool.length)];
+
+    const proximity = {
+      "or": 420,
+      "crystal": 980,
+      "bijoux": 670,
+      "minerai": 750,
+      "inox": 320,
+      "metal": 400,
+      "vitre": 850,
+      "diamant": 1000,
+      "saphir": 950,
+      "verre": 890,
+      "cristal": 980,
+      "jade": 940,
+      "rubis": 910,
+      "topaze": 920,
+      "miroir": 860,
+      "perle": 875,
+      "glace": 845
+    };
+
+    let tries = 0;
+    let found = false;
+    let log = document.getElementById("log");
+
+    function checkGuess() {
+      if (found) return;
+      const input = document.getElementById("guess");
+      const word = input.value.trim().toLowerCase();
+      input.value = "";
+      if (!word) return;
+      tries++;
+
+      if (word === target) {
+        log.innerText += `\n✅ ${word} → 1000/1000 — Mot mystère trouvé en ${tries} essais !`;
+        found = true;
+        return;
+      }
+
+      const score = proximity[word] || Math.floor(Math.random() * 300);
+      log.innerText += `\n🔹 ${word} → ${score}/1000`;
+
+      if (tries === 20 && !found) {
+        log.innerText += "\n💡 Indice : C'est un mot simple, lié à une matière précieuse, brillante ou transparente.";
+      }
+
+      log.scrollTop = log.scrollHeight;
+    }
+  </script>
+</body>
+</html>
