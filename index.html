@@ -87,7 +87,6 @@
       margin-right: auto;
     }
   </style>
-  <script src="wordPool.js"></script>
 </head>
 <body>
   <h1>🔍 Le Cristal Caché</h1>
@@ -132,16 +131,26 @@
     let maxHints = 3;
     let log = document.getElementById("log");
     let guessHistory = [];
-    let resultTable = document.querySelector("#resultsTable tbody");
+    let resultTable;
+    let dictionnaire = [];
+
+    fetch("dictionnaire.json")
+      .then(res => res.json())
+      .then(data => dictionnaire = data);
+
+    document.addEventListener("DOMContentLoaded", () => {
+      resultTable = document.querySelector("#resultsTable tbody");
+      newGame();
+    });
 
     function newGame() {
-      target = wordPool[Math.floor(Math.random() * wordPool.length)];
+      target = "voiture";
       resetGame();
     }
 
     function setManualWord() {
       const input = document.getElementById("customWord").value.trim().toLowerCase();
-      if (!/^[a-zàâçéèêëîïôûùüÿñæœ]{3,12}$/i.test(input)) {
+      if (!/^[a-zàâçéèêëîïôûùüÿñæœ]{3,24}$/i.test(input)) {
         log.innerText += `\n❌ Le mot personnalisé est invalide.`;
         return;
       }
@@ -156,7 +165,7 @@
       hintsGiven = 0;
       guessHistory = [];
       log.innerText = "";
-      resultTable.innerHTML = "";
+      if (resultTable) resultTable.innerHTML = "";
       document.getElementById("counter").innerText = tries;
       confetti.stop();
     }
@@ -176,13 +185,13 @@
       const word = input.value.trim().toLowerCase();
       input.value = "";
 
-      if (!/^[a-zàâçéèêëîïôûùüÿñæœ]{3,12}$/i.test(word)) {
-        log.innerText += `\n❌ "${word}" est invalide. Pas de mots composés ni de fautes.`;
+      if (!/^[a-zàâçéèêëîïôûùüÿñæœ]{3,24}$/i.test(word)) {
+        log.innerText += `\n❌ "${word}" est invalide.`;
         return;
       }
 
-      if (!wordPool.includes(word) && word !== target) {
-        log.innerText += `\n❌ "${word}" n'est pas reconnu comme un mot correct.`;
+      if (!dictionnaire.includes(word) && word !== target) {
+        log.innerText += `\n❌ "${word}" n'existe pas dans le dictionnaire.`;
         return;
       }
 
@@ -192,14 +201,6 @@
       document.getElementById("counter").innerText = tries;
       guessHistory.push(word);
 
-      if (word === target) {
-        log.innerText += `\n🎯 Bravo ! ${word} était le mot mystère. Trouvé en ${tries} tentatives.`;
-        found = true;
-        confetti.start();
-        saveScore();
-        return;
-      }
-
       const score = Math.floor(Math.random() * 100);
       const temp = getTemperature(score);
       log.innerText += `\n🔹 ${word} → ${temp} (${score}°)`;
@@ -207,6 +208,13 @@
       const row = document.createElement("tr");
       row.innerHTML = `<td>${tries}</td><td>${word}</td><td>${score.toFixed(2)}°</td><td>${score}%</td>`;
       resultTable.appendChild(row);
+
+      if (word === target) {
+        log.innerText += `\n🎯 Bravo ! ${word} était le mot mystère. Trouvé en ${tries} tentatives.`;
+        found = true;
+        confetti.start();
+        saveScore();
+      }
 
       if (tries === 20 && !found && hintsGiven < maxHints) {
         showHint();
@@ -237,8 +245,6 @@
       start: () => document.body.style.background = "#d1ffd6",
       stop: () => document.body.style.background = "linear-gradient(to bottom, #e0f7fa, #ffffff)"
     };
-
-    newGame();
   </script>
 </body>
 </html>
