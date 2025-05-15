@@ -1,0 +1,141 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Le Cristal Caché</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to bottom, #e0f7fa, #ffffff);
+      padding: 2rem;
+      text-align: center;
+    }
+    h1 {
+      color: #00796b;
+      margin-bottom: 0.5rem;
+    }
+    p {
+      color: #555;
+      margin-bottom: 1.5rem;
+    }
+    input, button {
+      padding: 0.7rem 1rem;
+      font-size: 1rem;
+      margin: 0.3rem;
+      border: none;
+      border-radius: 5px;
+    }
+    input {
+      width: 80%;
+      max-width: 300px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #00796b;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #004d40;
+    }
+    #log {
+      margin-top: 2rem;
+      white-space: pre-line;
+      background-color: white;
+      padding: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      max-width: 90%;
+      margin-left: auto;
+      margin-right: auto;
+      height: 300px;
+      overflow-y: auto;
+      text-align: left;
+    }
+    #counter {
+      font-weight: bold;
+      color: #004d40;
+    }
+  </style>
+  <script src="wordPool.js"></script>
+</head>
+<body>
+  <h1>🔍 Le Cristal Caché</h1>
+  <p>Devine le mot mystère ! <span id="counter">0</span> tentatives.</p>
+  <input type="text" id="guess" placeholder="Tape ton mot...">
+  <button onclick="checkGuess()">Valider</button>
+  <button onclick="showHint()">Afficher un indice</button>
+  <button onclick="newGame()">Nouvelle partie</button>
+  <div id="log"></div>
+
+  <script>
+    let target = "";
+    let tries = 0;
+    let found = false;
+    let log = document.getElementById("log");
+    let guessHistory = [];
+
+    function newGame() {
+      target = wordPool[Math.floor(Math.random() * wordPool.length)];
+      tries = 0;
+      found = false;
+      guessHistory = [];
+      log.innerText = "";
+      document.getElementById("counter").innerText = tries;
+      confetti.stop();
+    }
+
+    function checkGuess() {
+      if (found) return;
+      const input = document.getElementById("guess");
+      const word = input.value.trim().toLowerCase();
+      input.value = "";
+      if (!word || guessHistory.includes(word)) return;
+
+      tries++;
+      document.getElementById("counter").innerText = tries;
+      guessHistory.push(word);
+
+      if (word === target) {
+        log.innerText += `\n✅ ${word} → 1000/1000 — Mot mystère trouvé en ${tries} essais !`;
+        found = true;
+        confetti.start();
+        saveScore();
+        return;
+      }
+
+      const score = Math.floor(Math.random() * 300);
+      log.innerText += `\n🔹 ${word} → ${score}/1000`;
+
+      if (tries === 20 && !found) {
+        showHint();
+      }
+
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function showHint() {
+      if (!log.innerText.includes("💡 Indice")) {
+        log.innerText += "\n💡 Indice : C'est un mot simple, en un seul mot, issu du vocabulaire courant.";
+        log.scrollTop = log.scrollHeight;
+      }
+    }
+
+    function saveScore() {
+      let games = parseInt(localStorage.getItem("games") || 0);
+      let totalTries = parseInt(localStorage.getItem("totalTries") || 0);
+      localStorage.setItem("games", games + 1);
+      localStorage.setItem("totalTries", totalTries + tries);
+    }
+
+    const confetti = {
+      start: () => document.body.style.background = "#d1ffd6",
+      stop: () => document.body.style.background = "linear-gradient(to bottom, #e0f7fa, #ffffff)"
+    };
+
+    newGame();
+  </script>
+</body>
+</html>
