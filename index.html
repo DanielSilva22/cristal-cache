@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -20,7 +19,7 @@
       color: #555;
       margin-bottom: 1.5rem;
     }
-    input, button {
+    input, button, select {
       padding: 0.7rem 1rem;
       font-size: 1rem;
       margin: 0.3rem;
@@ -67,24 +66,54 @@
   <input type="text" id="guess" placeholder="Tape ton mot...">
   <button onclick="checkGuess()">Valider</button>
   <button onclick="showHint()">Afficher un indice</button>
-  <button onclick="newGame()">Nouvelle partie</button>
+  <button onclick="newGame()">Nouvelle partie aléatoire</button>
+  <br>
+  <input type="text" id="customWord" placeholder="Mot choisi manuellement">
+  <button onclick="setManualWord()">Définir mot mystère</button>
   <div id="log"></div>
 
   <script>
     let target = "";
     let tries = 0;
     let found = false;
+    let hintsGiven = 0;
+    let maxHints = 3;
     let log = document.getElementById("log");
     let guessHistory = [];
 
     function newGame() {
       target = wordPool[Math.floor(Math.random() * wordPool.length)];
+      resetGame();
+    }
+
+    function setManualWord() {
+      const input = document.getElementById("customWord").value.trim().toLowerCase();
+      if (!/^[a-zàâçéèêëîïôûùüÿñæœ]{3,12}$/i.test(input)) {
+        log.innerText += `\n❌ Le mot personnalisé est invalide.`;
+        return;
+      }
+      target = input;
+      resetGame();
+      log.innerText += `\n✅ Mot mystère défini manuellement.`;
+    }
+
+    function resetGame() {
       tries = 0;
       found = false;
+      hintsGiven = 0;
       guessHistory = [];
       log.innerText = "";
       document.getElementById("counter").innerText = tries;
       confetti.stop();
+    }
+
+    function getTemperature(score) {
+      if (score >= 90) return "🔥 brûlant";
+      if (score >= 70) return "🌡️ très chaud";
+      if (score >= 50) return "🙂 chaud";
+      if (score >= 30) return "😐 tiède";
+      if (score >= 10) return "🥶 froid";
+      return "❄️ très froid";
     }
 
     function checkGuess() {
@@ -92,24 +121,36 @@
       const input = document.getElementById("guess");
       const word = input.value.trim().toLowerCase();
       input.value = "";
-      if (!word || guessHistory.includes(word)) return;
+
+      if (!/^[a-zàâçéèêëîïôûùüÿñæœ]{3,12}$/i.test(word)) {
+        log.innerText += `\n❌ "${word}" est invalide. Pas de mots composés ni de fautes.`;
+        return;
+      }
+
+      if (!wordPool.includes(word)) {
+        log.innerText += `\n❌ "${word}" n'est pas reconnu comme un mot correct.`;
+        return;
+      }
+
+      if (guessHistory.includes(word)) return;
 
       tries++;
       document.getElementById("counter").innerText = tries;
       guessHistory.push(word);
 
       if (word === target) {
-        log.innerText += `\n✅ ${word} → 1000/1000 — Mot mystère trouvé en ${tries} essais !`;
+        log.innerText += `\n🎯 Bravo ! ${word} était le mot mystère. Trouvé en ${tries} tentatives.`;
         found = true;
         confetti.start();
         saveScore();
         return;
       }
 
-      const score = Math.floor(Math.random() * 300);
-      log.innerText += `\n🔹 ${word} → ${score}/1000`;
+      const score = Math.floor(Math.random() * 100);
+      const temp = getTemperature(score);
+      log.innerText += `\n🔹 ${word} → ${temp} (${score}°)`;
 
-      if (tries === 20 && !found) {
+      if (tries === 20 && !found && hintsGiven < maxHints) {
         showHint();
       }
 
@@ -117,8 +158,12 @@
     }
 
     function showHint() {
-      if (!log.innerText.includes("💡 Indice")) {
-        log.innerText += "\n💡 Indice : C'est un mot simple, en un seul mot, issu du vocabulaire courant.";
+      if (hintsGiven < maxHints) {
+        hintsGiven++;
+        log.innerText += `\n💡 Indice ${hintsGiven} : C'est un mot simple, en un seul mot, issu du vocabulaire courant.`;
+        log.scrollTop = log.scrollHeight;
+      } else {
+        log.innerText += `\n❌ Tu as utilisé tous tes indices.`;
         log.scrollTop = log.scrollHeight;
       }
     }
@@ -139,3 +184,4 @@
   </script>
 </body>
 </html>
+
