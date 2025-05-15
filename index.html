@@ -133,10 +133,25 @@
     let guessHistory = [];
     let resultTable;
     let dictionnaire = [];
+    let embeddings = {};
+
+    function cosineSimilarity(a, b) {
+      let dot = 0, normA = 0, normB = 0;
+      for (let i = 0; i < a.length; i++) {
+        dot += a[i] * b[i];
+        normA += a[i] * a[i];
+        normB += b[i] * b[i];
+      }
+      return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+    }
 
     fetch("dictionnaire.json")
       .then(res => res.json())
       .then(data => dictionnaire = data);
+
+    fetch("embeddings.json")
+      .then(res => res.json())
+      .then(data => embeddings = data);
 
     document.addEventListener("DOMContentLoaded", () => {
       resultTable = document.querySelector("#resultsTable tbody");
@@ -144,7 +159,7 @@
     });
 
     function newGame() {
-      target = "voiture";
+      target = dictionnaire[Math.floor(Math.random() * dictionnaire.length)];
       resetGame();
     }
 
@@ -195,13 +210,18 @@
         return;
       }
 
+      if (!(word in embeddings) || !(target in embeddings)) {
+        log.innerText += `\n❌ Pas d'embedding pour ce mot.`;
+        return;
+      }
+
       if (guessHistory.includes(word)) return;
 
       tries++;
       document.getElementById("counter").innerText = tries;
       guessHistory.push(word);
 
-      const score = Math.floor(Math.random() * 100);
+      const score = Math.floor(cosineSimilarity(embeddings[word], embeddings[target]) * 100);
       const temp = getTemperature(score);
       log.innerText += `\n🔹 ${word} → ${temp} (${score}°)`;
 
