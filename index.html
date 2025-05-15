@@ -1,114 +1,87 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Le Cristal Caché</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(to bottom, #e0f7fa, #ffffff);
-      padding: 2rem;
-      text-align: center;
-    }
-    h1 {
-      color: #00796b;
-      margin-bottom: 0.5rem;
-    }
-    p {
-      color: #555;
-      margin-bottom: 1.5rem;
-    }
-    input, button, select {
-      padding: 0.7rem 1rem;
-      font-size: 1rem;
-      margin: 0.3rem;
-      border: none;
-      border-radius: 5px;
-    }
-    input {
-      width: 80%;
-      max-width: 300px;
-      border: 1px solid #ccc;
-    }
-    button {
-      background-color: #00796b;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #004d40;
-    }
-    #log {
-      margin-top: 2rem;
-      white-space: pre-line;
-      background-color: white;
-      padding: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      max-width: 90%;
-      margin-left: auto;
-      margin-right: auto;
-      height: 300px;
-      overflow-y: auto;
-      text-align: left;
-    }
-    #counter {
-      font-weight: bold;
-      color: #004d40;
-    }
-    .legend {
-      margin-top: 2rem;
-      text-align: left;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
-      background: #ffffff;
-      padding: 1rem;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    .legend table, #resultsTable {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    .legend th, .legend td, #resultsTable th, #resultsTable td {
-      padding: 0.5rem;
-      text-align: center;
-      border: 1px solid #ddd;
-    }
-    .legend th, #resultsTable th {
-      background-color: #f0f0f0;
-    }
-    #results {
-      margin-top: 2rem;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-  </style>
-</head>
-<body>
-  <h1>🔍 Le Cristal Caché</h1>
-  <p>Devine le mot mystère ! <span id="counter">0</span> tentatives.</p>
-  <input type="text" id="guess" placeholder="Tape ton mot...">
-  <button onclick="checkGuess()">Valider</button>
-  <button onclick="showHint()">Afficher un indice</button>
-  <button onclick="newGame()">Nouvelle partie aléatoire</button>
-  <br>
-  <input type="text" id="customWord" placeholder="Mot choisi manuellement">
-  <button onclick="setManualWord()">Définir mot mystère</button>
-  <div id="log"></div>
+/* Code mis à jour avec affichage du meilleur mot + indices variés */
 
-  <div id="results">
-    <h3>📊 Résultats</h3>
-    <table id="resultsTable">
-      <thead>
-        <tr><th>#</th><th>Mot</th><th>Température</th><th>Progression</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+// Ajout en haut du script après les variables globales
+let bestWord = null;
+let bestScore = -Infinity;
+const hintPool = [
+  "C'est un objet courant.",
+  "Il est souvent utilisé à la maison.",
+  "C'est un nom commun.",
+  "On peut le voir dehors.",
+  "Ce mot n'a qu'un seul mot.",
+  "Il est connu des enfants.",
+  "C'est un mot du quotidien."
+];
+
+// Modifie la fonction checkGuess
+function checkGuess() {
+  if (!dataLoaded || found) return;
+
+  const input = document.getElementById("guess");
+  const word = input.value.trim().toLowerCase();
+  input.value = "";
+
+  if (!/^[a-zàâçéèêëîïôûùüÿñæœ]{3,24}$/i.test(word)) {
+    log.innerText += `\n❌ "${word}" est invalide.`;
+    return;
+  }
+
+  if (!dictionnaire.includes(word) && word !== target) {
+    log.innerText += `\n❌ "${word}" n'existe pas dans le dictionnaire.`;
+    return;
+  }
+
+  if (!(word in embeddings) || !(target in embeddings)) {
+    log.innerText += `\n❌ Pas d'embedding pour ce mot.`;
+    return;
+  }
+
+  if (guessHistory.includes(word)) return;
+
+  tries++;
+  document.getElementById("counter").innerText = tries;
+  guessHistory.push(word);
+
+  const score = Math.floor(cosineSimilarity(embeddings[word], embeddings[target]) * 100);
+  const temp = getTemperature(score);
+  log.innerText += `\n🔹 ${word} → ${temp} (${score}°)`;
+
+  if (score > bestScore) {
+    bestScore = score;
+    bestWord = word;
+    log.innerText += ` \u2728 (meilleur mot actuel)`;
+  }
+
+  const row = document.createElement("tr");
+  row.innerHTML = `<td>${tries}</td><td>${word}</td><td>${score.toFixed(2)}°</td><td>${score}%</td>`;
+  resultTable.appendChild(row);
+
+  if (word === target) {
+    log.innerText += `\n🎯 Bravo ! ${word} était le mot mystère. Trouvé en ${tries} tentatives.`;
+    found = true;
+    confetti.start();
+    saveScore();
+  }
+
+  if (tries === 20 && !found && hintsGiven < maxHints) {
+    showHint();
+  }
+
+  log.scrollTop = log.scrollHeight;
+}
+
+// Modifie la fonction showHint pour qu'elle varie
+function showHint() {
+  if (found || !dataLoaded) return;
+  if (hintsGiven < maxHints) {
+    hintsGiven++;
+    const hint = hintPool[Math.floor(Math.random() * hintPool.length)];
+    log.innerText += `\n💡 Indice ${hintsGiven} : ${hint}`;
+  } else {
+    log.innerText += `\n❌ Tu as utilisé tous tes indices.`;
+  }
+  log.scrollTop = log.scrollHeight;
+}
 
   <div class="legend">
     <h3>📘 Légende des températures</h3>
