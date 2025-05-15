@@ -57,6 +57,35 @@
       font-weight: bold;
       color: #004d40;
     }
+    .legend {
+      margin-top: 2rem;
+      text-align: left;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      background: #ffffff;
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    .legend table, #resultsTable {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .legend th, .legend td, #resultsTable th, #resultsTable td {
+      padding: 0.5rem;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+    .legend th, #resultsTable th {
+      background-color: #f0f0f0;
+    }
+    #results {
+      margin-top: 2rem;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
   </style>
   <script src="wordPool.js"></script>
 </head>
@@ -72,6 +101,29 @@
   <button onclick="setManualWord()">Définir mot mystère</button>
   <div id="log"></div>
 
+  <div id="results">
+    <h3>📊 Résultats</h3>
+    <table id="resultsTable">
+      <thead>
+        <tr><th>#</th><th>Mot</th><th>Température</th><th>Progression</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="legend">
+    <h3>📘 Légende des températures</h3>
+    <table>
+      <tr><th>Température</th><th>Symbole</th><th>Description</th></tr>
+      <tr><td>≥ 90°</td><td>🔥</td><td>brûlant</td></tr>
+      <tr><td>70–89°</td><td>🌡️</td><td>très chaud</td></tr>
+      <tr><td>50–69°</td><td>🙂</td><td>chaud</td></tr>
+      <tr><td>30–49°</td><td>😐</td><td>tiède</td></tr>
+      <tr><td>10–29°</td><td>🥶</td><td>froid</td></tr>
+      <tr><td>&lt; 10°</td><td>❄️</td><td>très froid</td></tr>
+    </table>
+  </div>
+
   <script>
     let target = "";
     let tries = 0;
@@ -80,6 +132,7 @@
     let maxHints = 3;
     let log = document.getElementById("log");
     let guessHistory = [];
+    let resultTable = document.querySelector("#resultsTable tbody");
 
     function newGame() {
       target = wordPool[Math.floor(Math.random() * wordPool.length)];
@@ -103,6 +156,7 @@
       hintsGiven = 0;
       guessHistory = [];
       log.innerText = "";
+      resultTable.innerHTML = "";
       document.getElementById("counter").innerText = tries;
       confetti.stop();
     }
@@ -127,7 +181,7 @@
         return;
       }
 
-      if (!wordPool.includes(word)) {
+      if (!wordPool.includes(word) && word !== target) {
         log.innerText += `\n❌ "${word}" n'est pas reconnu comme un mot correct.`;
         return;
       }
@@ -149,6 +203,10 @@
       const score = Math.floor(Math.random() * 100);
       const temp = getTemperature(score);
       log.innerText += `\n🔹 ${word} → ${temp} (${score}°)`;
+
+      const row = document.createElement("tr");
+      row.innerHTML = `<td>${tries}</td><td>${word}</td><td>${score.toFixed(2)}°</td><td>${score}%</td>`;
+      resultTable.appendChild(row);
 
       if (tries === 20 && !found && hintsGiven < maxHints) {
         showHint();
